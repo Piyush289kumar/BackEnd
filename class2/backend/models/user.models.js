@@ -8,6 +8,15 @@ const userSchema = new mongooes.Schema(
       unique: true,
       lowercase: true,
     },
+    email: {
+      type: String,
+      require: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      require: [true, "Password is Required"],
+    },
   },
   { timestamps: true }
 );
