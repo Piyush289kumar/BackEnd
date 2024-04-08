@@ -5,14 +5,14 @@ const userSchema = new Schema(
 		username: {
 			type: String,
 			unique: true,
-			required: true,
+			required: [true, "Username is Required"],
 			lowercase: true,
 			trim: true,
 		},
 		email: {
 			type: String,
 			unique: true,
-			required: true,
+			required: [true, "Email is Required"],
 			lowercase: true,
 			trim: true,
 		},
@@ -35,7 +35,7 @@ const userSchema = new Schema(
 		},
 		password: {
 			type: String,
-			required: true,
+			required: [true, "Password is Required"],
 		},
 		refreshToken: {
 			type: String,
