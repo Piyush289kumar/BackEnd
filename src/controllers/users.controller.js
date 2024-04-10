@@ -1,6 +1,8 @@
 import { asyncHandler } from "../utils/asycHandler.utils.js";
 import { ApiError } from "../utils/apiError.utils.js";
 import { User } from "../models/users.models.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
+import { ApiResponse } from "../utils/apiResponse.utils.js";
 const registerUser = asyncHandler(async (req, res) => {
 	// Get user details from frontend
 	// Validation - not Empty
@@ -11,29 +13,57 @@ const registerUser = asyncHandler(async (req, res) => {
 	// Remove password and refresh token field from response
 	// Check for user creation
 	// Return res
-
 	const { username, fullName, email, password } = req.body;
-
 	if (
 		[username, fullName, email, password].some(
-			(field) => field?.tirm() === ""
+			(field) => field?.trim() === ""
 		)
 	) {
 		throw new ApiError(400, "All Field is required");
 	}
-
-	if (User.findOne({ $or: [{ username }, { email }] })) {
+	const userExited = await User.findOne({ $or: [{ username }, { email }] });
+	if (userExited) {
+		console.log(username);
 		throw new ApiError(
 			409,
 			"User with email or username is already exited"
 		);
 	}
-
-	const avatarLocalPath = req.files;
-
-	res.json({
-		avatarLocalPath,
+	const avatarLocalPath = req.files?.avatar[0]?.path;
+	const coverImageLocalPath = req.files?.coverImage[0]?.path;
+	if (!avatarLocalPath) {
+		throw new ApiError(400, "Avatar file is requied");
+	}
+	const avatar = await uploadOnCloudinary(avatarLocalPath);
+	const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+	if (!avatar) {
+		throw new ApiError(400, "Avatar file is requied");
+	}
+	const userCreateQuery = await User.create({
+		username: username,
+		password: password,
+		email: email,
+		fullName: fullName,
+		avatar: avatar.url,
+		coverImage: coverImage.url || "",
 	});
+	const userCreateQueryRes = await User.findById(userCreateQuery._id).select(
+		"-password -refreshToken"
+	);
+	if (!userCreateQueryRes) {
+		throw new ApiError(
+			500,
+			"Something went wrong while resitering the user"
+		);
+	}
+	return res
+		.status(201)
+		.json(
+			new ApiResponse(
+				200,
+				userCreateQueryRes,
+				"User Registered Successfully"
+			)
+		);
 });
-
 export { registerUser };
