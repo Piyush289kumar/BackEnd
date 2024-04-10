@@ -1,7 +1,7 @@
-import { asycHandler } from "../utils/asycHandler.utils.js";
+import { asyncHandler } from "../utils/asycHandler.utils.js";
 
-const registerUser = asycHandler(async (req, res) => {
-	res.status(200).json({
+const registerUser = asyncHandler(async (req, res) => {
+	return res.status(200).json({
 		message: "ok",
 	});
 });
