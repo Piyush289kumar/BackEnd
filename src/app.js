@@ -12,5 +12,12 @@ app.use(
 		credentials: true,
 	})
 );
+
+// Import Router
+import userRouter from "./routes/users.routes.js";
+
+// Router Declaration
+app.use("/api/v1/users", userRouter);
+
 app.use(cookieParser());
 export { app };
