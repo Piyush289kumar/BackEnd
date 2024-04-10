@@ -2,7 +2,6 @@
 *.env
 .env
 .env*
-
 # Logs
 logs
 *.log
@@ -14,7 +13,6 @@ lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
 # Runtime data
 pids
 *.pid
@@ -121,5 +119,4 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
