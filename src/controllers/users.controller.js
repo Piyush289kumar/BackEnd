@@ -3,16 +3,13 @@ import { ApiError } from "../utils/apiError.utils.js";
 import { User } from "../models/users.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
 import { ApiResponse } from "../utils/apiResponse.utils.js";
-
 const generateAccessAndRefreshToken = async (userId) => {
 	try {
 		const findUserData = await User.findById(userId);
 		const accessToken = await findUserData.generateAccessToken();
 		const refreshToken = await findUserData.generateRefreshToken();
-
 		findUserData.refreshToken = refreshToken;
 		await findUserData.save({ validateBeforeSave: false });
-
 		return { accessToken, refreshToken };
 	} catch (error) {
 		throw new ApiError(
@@ -21,7 +18,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 		);
 	}
 };
-
 const registerUser = asyncHandler(async (req, res) => {
 	// Get user details from frontend
 	// Validation - not Empty
@@ -63,7 +59,6 @@ const registerUser = asyncHandler(async (req, res) => {
 		throw new ApiError(400, "Avatar file is requied");
 	}
 	const avatar = await uploadOnCloudinary(avatarLocalPath);
-
 	if (!avatar) {
 		throw new ApiError(400, "Avatar file is requied");
 	}
@@ -94,41 +89,31 @@ const registerUser = asyncHandler(async (req, res) => {
 			)
 		);
 });
-
 const loginUser = asyncHandler(async (req, res) => {
 	try {
 		const { email, username, password } = req.body;
-
 		if (!email && !username) {
 			throw new ApiError(400, "Email Or Username is Required");
 		}
-
 		const user = await User.findOne({
 			$or: [{ email }, { username }],
 		});
-
 		if (!user) {
 			throw new ApiError(404, "Account Not Found..!");
 		}
-
 		const isPasswordValid = await user.isPasswordCorrect(password);
-
 		if (!isPasswordValid) {
 			throw new ApiError(401, "Invalid User Credentials");
 		}
-
 		const { accessToken, refreshToken } =
 			await generateAccessAndRefreshToken(user._id);
-
 		const loggedInUser = await User.findById(user._id).select(
 			"-password -refreshToken"
 		);
-
 		const cookieOption = {
 			httpOnly: true,
 			secure: true,
 		};
-
 		return res
 			.status(200)
 			.cookie("accessToken", accessToken, cookieOption)
@@ -149,5 +134,28 @@ const loginUser = asyncHandler(async (req, res) => {
 	}
 });
 
-const logoutUser = asyncHandler(async (res, res) => {});
+const logoutUser = asyncHandler(async (req, res) => {
+	try {
+		await User.findByIdAndUpdate(
+			req.user._id,
+			{
+				$unset: {
+					refreshToken: 1,
+				},
+			},
+			{ new: true }
+		);
+		const cookieOption = {
+			httpOnly: true,
+			secure: true,
+		};
+		return res
+			.status(200)
+			.clearCookie("accessToken", accessToken, cookieOption)
+			.clearCookie("refreshToken", refreshToken, cookieOption)
+			.json(new ApiResponse(200, {}, "User Logged Out"));
+	} catch (error) {
+		throw new ApiError(500, "Something wrong while logout account");
+	}
+});
 export { registerUser, loginUser, logoutUser };
