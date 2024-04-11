@@ -29,12 +29,15 @@ const registerUser = asyncHandler(async (req, res) => {
 			"User with email or username is already exited"
 		);
 	}
-	const avatarLocalPath = req.files?.avatar[0]?.path;
-	const coverImageLocalPath = req.files?.coverImage[0]?.path;
+	const avatarLocalPath = await req.files?.avatar[0]?.path;
+	console.log(`avatarLocalPath: ${avatarLocalPath}`);
+
+	const coverImageLocalPath = await req.files?.coverImage[0]?.path;
 	if (!avatarLocalPath) {
 		throw new ApiError(400, "Avatar file is requied");
 	}
 	const avatar = await uploadOnCloudinary(avatarLocalPath);
+	console.log(`avatar: ${avatar}`);
 	const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 	if (!avatar) {
 		throw new ApiError(400, "Avatar file is requied");
