@@ -148,4 +148,6 @@ const loginUser = asyncHandler(async (req, res) => {
 		throw new ApiError(500, "Something wrong while login account.");
 	}
 });
-export { registerUser, loginUser };
+
+const logoutUser = asyncHandler(async (res, res) => {});
+export { registerUser, loginUser, logoutUser };
