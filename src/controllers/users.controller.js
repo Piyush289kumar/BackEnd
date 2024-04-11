@@ -3,6 +3,25 @@ import { ApiError } from "../utils/apiError.utils.js";
 import { User } from "../models/users.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
 import { ApiResponse } from "../utils/apiResponse.utils.js";
+
+const generateAccessAndRefreshToken = async (userId) => {
+	try {
+		const findUserData = await User.findById(userId);
+		const accessToken = await findUserData.generateAccessToken();
+		const refreshToken = await findUserData.generateRefreshToken();
+
+		findUserData.refreshToken = refreshToken;
+		await findUserData.save({ validateBeforeSave: false });
+
+		return { accessToken, refreshToken };
+	} catch (error) {
+		throw new ApiError(
+			500,
+			"Something went wrong while generating access and refresh tokens"
+		);
+	}
+};
+
 const registerUser = asyncHandler(async (req, res) => {
 	// Get user details from frontend
 	// Validation - not Empty
@@ -75,4 +94,58 @@ const registerUser = asyncHandler(async (req, res) => {
 			)
 		);
 });
-export { registerUser };
+
+const loginUser = asyncHandler(async (req, res) => {
+	try {
+		const { email, username, password } = req.body;
+
+		if (!email && !username) {
+			throw new ApiError(400, "Email Or Username is Required");
+		}
+
+		const user = await User.findOne({
+			$or: [{ email }, { username }],
+		});
+
+		if (!user) {
+			throw new ApiError(404, "Account Not Found..!");
+		}
+
+		const isPasswordValid = await user.isPasswordCorrect(password);
+
+		if (!isPasswordValid) {
+			throw new ApiError(401, "Invalid User Credentials");
+		}
+
+		const { accessToken, refreshToken } =
+			await generateAccessAndRefreshToken(user._id);
+
+		const loggedInUser = await User.findById(user._id).select(
+			"-password -refreshToken"
+		);
+
+		const cookieOption = {
+			httpOnly: true,
+			secure: true,
+		};
+
+		return res
+			.status(200)
+			.cookie("accessToken", accessToken, cookieOption)
+			.cookie("refreshToken", refreshToken, cookieOption)
+			.json(
+				new ApiResponse(
+					200,
+					{
+						user: loggedInUser,
+						accessToken,
+						refreshToken,
+					},
+					"User Logged In Successfully"
+				)
+			);
+	} catch (error) {
+		throw new ApiError(500, "Something wrong while login account.");
+	}
+});
+export { registerUser, loginUser };
