@@ -30,15 +30,21 @@ const registerUser = asyncHandler(async (req, res) => {
 		);
 	}
 	const avatarLocalPath = await req.files?.avatar[0]?.path;
-	console.log(`avatarLocalPath: ${avatarLocalPath}`);
-
-	const coverImageLocalPath = await req.files?.coverImage[0]?.path;
+	let coverImageLocalPath = "";
+	let coverImage = "";
+	if (
+		req.files &&
+		Array.isArray(req.files.coverImage) &&
+		req.files.coverImage.length > 0
+	) {
+		coverImageLocalPath = await req.files.coverImage[0].path;
+		coverImage = await uploadOnCloudinary(coverImageLocalPath);
+	}
 	if (!avatarLocalPath) {
 		throw new ApiError(400, "Avatar file is requied");
 	}
 	const avatar = await uploadOnCloudinary(avatarLocalPath);
-	console.log(`avatar: ${avatar}`);
-	const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
 	if (!avatar) {
 		throw new ApiError(400, "Avatar file is requied");
 	}
@@ -69,5 +75,4 @@ const registerUser = asyncHandler(async (req, res) => {
 			)
 		);
 });
-
 export { registerUser };
