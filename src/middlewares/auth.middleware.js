@@ -3,19 +3,21 @@ import { asyncHandler } from "../utils/asycHandler.utils.js";
 import jwt from "jsonwebtoken";
 import { User } from "../models/users.models.js";
 
-export const verifyJWT = asyncHandler(async (req, _, next) => {
+export const verifyJWT = asyncHandler(async (req, res, next) => {
 	try {
 		const token =
-			req.cookie?.accessToken ||
+			req.cookies?.accessToken ||
 			req.header("Authorization")?.replace("Bearer ", "");
 
 		if (!token) {
 			throw new ApiError(401, "Unauthorized Request");
 		}
 
-		console.log(`process.env.ACCESS_TOKEN_SECRET ` + process.env.ACCESS_TOKEN_SECRET);
+		console.log(
+			`process.env.ACCESS_TOKEN_SECRET = ` + process.env.ACCESS_TOKEN_SECRET
+		);
 
-		const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+		const decodedToken = jwt.verify(token, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJc3N1ZXIgKGlzcykiOiJJc3N1ZXIiLCJTdWJqZWN0IChzdWIpIjoiQUNDRVNTX1RPS0VOX1NFQ1JFVCJ9.ltxpYaK2_Se6ODgjKyL9puhvmjRGsMpB5BBtG6Fs_ro");
 
 		const user = await User.findById(decodedToken?._id).select(
 			"-password -refreshToken"
@@ -31,5 +33,3 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
 		throw new ApiError(401, error || "Invalid Access Token");
 	}
 });
-
-// new COmment 

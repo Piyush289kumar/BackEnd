@@ -3,6 +3,11 @@ import { ApiError } from "../utils/apiError.utils.js";
 import { User } from "../models/users.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
 import { ApiResponse } from "../utils/apiResponse.utils.js";
+
+const cookieOption = {
+	httpOnly: true,
+	secure: false,
+};
 const generateAccessAndRefreshToken = async (userId) => {
 	try {
 		const findUserData = await User.findById(userId);
@@ -104,8 +109,6 @@ const loginUser = asyncHandler(async (req, res) => {
 		}
 		const isPasswordValid = await user.isPasswordCorrect(password);
 
-		console.log(`isPasswordValid: ${isPasswordValid}`);
-
 		if (!isPasswordValid) {
 			throw new ApiError(401, "Invalid User Credentials");
 		}
@@ -114,10 +117,7 @@ const loginUser = asyncHandler(async (req, res) => {
 		const loggedInUser = await User.findById(user._id).select(
 			"-password -refreshToken"
 		);
-		const cookieOption = {
-			httpOnly: true,
-			secure: true,
-		};
+
 		return res
 			.status(200)
 			.cookie("accessToken", accessToken, cookieOption)
@@ -140,19 +140,20 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
 	try {
+		console.log(`req.cookies?.accessToken: ` + req.cookie);
+		console.log(`token ` + token);
+
+		console.log(`req.user._id: ${req.user._id}`);
 		await User.findByIdAndUpdate(
 			req.user._id,
 			{
-				$unset: {
-					refreshToken: 1,
+				$set: {
+					refreshToken: "",
 				},
 			},
 			{ new: true }
 		);
-		const cookieOption = {
-			httpOnly: true,
-			secure: true,
-		};
+
 		return res
 			.status(200)
 			.clearCookie("accessToken", accessToken, cookieOption)
