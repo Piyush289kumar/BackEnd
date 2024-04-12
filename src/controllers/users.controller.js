@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/apiResponse.utils.js";
 
 const cookieOption = {
 	httpOnly: true,
-	secure: false,
+	secure: true,
 };
 const generateAccessAndRefreshToken = async (userId) => {
 	try {
@@ -43,7 +43,6 @@ const registerUser = asyncHandler(async (req, res) => {
 	}
 	const userExited = await User.findOne({ $or: [{ username }, { email }] });
 	if (userExited) {
-		console.log(username);
 		throw new ApiError(
 			409,
 			"User with email or username is already exited"
@@ -140,15 +139,11 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
 	try {
-		console.log(`req.cookies?.accessToken: ` + req.cookie);
-		console.log(`token ` + token);
-
-		console.log(`req.user._id: ${req.user._id}`);
 		await User.findByIdAndUpdate(
 			req.user._id,
 			{
-				$set: {
-					refreshToken: "",
+				$unset: {
+					refreshToken: "1",
 				},
 			},
 			{ new: true }
@@ -156,8 +151,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 		return res
 			.status(200)
-			.clearCookie("accessToken", accessToken, cookieOption)
-			.clearCookie("refreshToken", refreshToken, cookieOption)
+			.clearCookie("accessToken", cookieOption)
+			.clearCookie("refreshToken", cookieOption)
 			.json(new ApiResponse(200, {}, "User Logged Out"));
 	} catch (error) {
 		throw new ApiError(500, "Something wrong while logout account");
