@@ -194,4 +194,92 @@ const renewRefreshToken = asyncHandler(async (req, res) => {
 		throw new ApiError(401, error?.message || "Invalid Access Token");
 	}
 });
-export { registerUser, loginUser, logoutUser, renewRefreshToken };
+const updateCurrentUserPassword = asyncHandler(async (req, res) => {
+	const { oldPassword, newPassword, confPassword } = req.body;
+	if (oldPassword && newPassword && confPassword) {
+		throw new ApiError(400, "All fields are required");
+	}
+	if (newPassword !== confPassword) {
+		throw new ApiError(401, "Password Mismatch");
+	}
+	try {
+		const user = await User.findById(req.user?._id);
+		if (!user) {
+			throw new ApiError(401, "Can't Get User Data");
+		}
+		const isPasswordValid = await user.isPasswordCorrect(newPassword);
+		if (!isPasswordValid) {
+			throw new ApiError(400, "Invalid old Password");
+		}
+		user.password = newPassword;
+		await user.save({ validateBeforeSave: false });
+		return res
+			.status(200)
+			.json(new ApiResponse(200, {}, "User Password is Updated"));
+	} catch (error) {
+		throw new ApiError(
+			401,
+			error?.message || "Error While Update User Password"
+		);
+	}
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+	return res
+		.status(200)
+		.json(new ApiResponse(200, req.user, "User Fetch Successfully"));
+});
+
+const updateCurrentUserAccountDetails = asyncHandler(async (req, res) => {
+	const { fullName, email, username } = req.body;
+
+	if (!fullName && !email && !username) {
+		throw new ApiError(400, "Please Give Full Name Or Email Or Username");
+	}
+	try {
+		const user = await findByIdAndUpdate(
+			req.user?._id,
+			{
+				$set: {
+					fullName,
+					email,
+					username,
+				},
+			},
+			{
+				new: true,
+			}
+		).select("-password -refreshToken");
+
+		if (!user) {
+			throw new ApiError(
+				401,
+				"Can't Get User Details and Unable to Update Data "
+			);
+		}
+
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					200,
+					user,
+					"Account Detail Updated Successfully"
+				)
+			);
+	} catch (error) {
+		throw new ApiError(
+			400,
+			error?.message || "Something Wrong while User Data Update."
+		);
+	}
+});
+
+export {
+	registerUser,
+	loginUser,
+	logoutUser,
+	renewRefreshToken,
+	updateCurrentUserPassword,
+	getCurrentUser,
+};
