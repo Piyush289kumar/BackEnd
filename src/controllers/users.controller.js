@@ -223,16 +223,13 @@ const updateCurrentUserPassword = asyncHandler(async (req, res) => {
 		);
 	}
 });
-
 const getCurrentUser = asyncHandler(async (req, res) => {
 	return res
 		.status(200)
 		.json(new ApiResponse(200, req.user, "User Fetch Successfully"));
 });
-
 const updateCurrentUserAccountDetails = asyncHandler(async (req, res) => {
 	const { fullName, email, username } = req.body;
-
 	if (!fullName && !email && !username) {
 		throw new ApiError(400, "Please Give Full Name Or Email Or Username");
 	}
@@ -250,14 +247,12 @@ const updateCurrentUserAccountDetails = asyncHandler(async (req, res) => {
 				new: true,
 			}
 		).select("-password -refreshToken");
-
 		if (!user) {
 			throw new ApiError(
 				401,
 				"Can't Get User Details and Unable to Update Data "
 			);
 		}
-
 		return res
 			.status(200)
 			.json(
@@ -275,6 +270,51 @@ const updateCurrentUserAccountDetails = asyncHandler(async (req, res) => {
 	}
 });
 
+const updateCurrentUserAvatar = asyncHandler(async (req, res) => {
+	const avatarLocalPath = req.file?.path;
+
+	if (!avatarLocalPath) {
+		throw new ApiError(400, "Avatar Image Is Missing");
+	}
+	try {
+		const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+		if (!avatar.url) {
+			throw new ApiError(
+				401,
+				"Error While Uploading Avatar on Cloudinary"
+			);
+		}
+
+		const user = await findByIdAndUpdate(
+			req.user?._id,
+			{
+				$set: {
+					avatar: avatar?.url,
+				},
+			},
+			{
+				new: true,
+			}
+		).select("-password -refreshToken");
+
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					200,
+					user,
+					"User Avatar is Updated Successfully"
+				)
+			);
+	} catch (error) {
+		throw new ApiError(
+			401,
+			error?.message || "Something wrong while Updated User Avatar"
+		);
+	}
+});
+
 export {
 	registerUser,
 	loginUser,
@@ -282,4 +322,6 @@ export {
 	renewRefreshToken,
 	updateCurrentUserPassword,
 	getCurrentUser,
+	updateCurrentUserAccountDetails,
+	updateCurrentUserAvatar,
 };
