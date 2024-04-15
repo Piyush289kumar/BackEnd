@@ -349,10 +349,82 @@ const updateCurrentUserCoverImage = asyncHandler(async (req, res) => {
 		throw new ApiError(
 			401,
 			error?.message ||
-			"Something wrong while Update Current User Cover Image"
+				"Something wrong while Update Current User Cover Image"
 		);
 	}
 });
+
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+	const { username } = req.params;
+
+	if (!username?.trim()) {
+		throw new ApiError(404, "User is not found..!");
+	}
+
+	const channel = await User.aggregate([
+		{
+			$match: { username: username?.toLowerCase() },
+		},
+		{
+			$lookup: {
+				from: "subscriptions",
+				localField: "_id",
+				foreignField: "channel",
+				as: "subscribers",
+			},
+		},
+		{
+			$lookup: {
+				form: "subscriptions",
+				localField: "_id",
+				foreignField: "subscriber",
+				as: "subscribedTo",
+			},
+		},
+		{
+			$addFields: {
+				subscriberCount: { $size: "$subscribers" },
+				channelsSubscribedToCount: { $size: "$subscribedTo" },
+				isSubscribed: {
+					$cond: {
+						if: {
+							$in: [req.user?._id, "$subscribers.subscriber"],
+							then: true,
+							else: false,
+						},
+					},
+				},
+			},
+		},
+		{
+			$project: {
+				username: 1,
+				email: 1,
+				fullName: 1,
+				avatar: 1,
+				coverImage: 1,
+				subscriberCount: 1,
+				channelsSubscribedToCount: 1,
+				isSubscribed: 1,
+			},
+		},
+	]);
+
+	if (!channel?.length <= 0) {
+		throw new ApiError(404, "Channel does not exists");
+	}
+
+	return res
+		.status(200)
+		.json(
+			new ApiResponse(
+				200,
+				channel[0],
+				"User channel fetched Successfully"
+			)
+		);
+});
+
 export {
 	registerUser,
 	loginUser,
@@ -363,4 +435,5 @@ export {
 	updateCurrentUserAccountDetails,
 	updateCurrentUserAvatar,
 	updateCurrentUserCoverImage,
+	getUserChannelProfile,
 };
