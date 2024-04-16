@@ -196,7 +196,6 @@ const renewRefreshToken = asyncHandler(async (req, res) => {
 	}
 });
 
-
 const updateCurrentUserPassword = asyncHandler(async (req, res) => {
 	const { oldPassword, newPassword, confPassword } = req.body;
 	if (oldPassword && newPassword && confPassword) {
