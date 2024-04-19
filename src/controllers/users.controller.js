@@ -235,8 +235,9 @@ const updateCurrentUserAccountDetails = asyncHandler(async (req, res) => {
 	if (!fullName && !email && !username) {
 		throw new ApiError(400, "Please Give Full Name Or Email Or Username");
 	}
+
 	try {
-		const user = await findByIdAndUpdate(
+		const user = await User.findByIdAndUpdate(
 			req.user?._id,
 			{
 				$set: {

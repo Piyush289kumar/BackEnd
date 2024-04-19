@@ -4,6 +4,7 @@ import {
 	logoutUser,
 	registerUser,
 	renewRefreshToken,
+	getCurrentUser,
 	updateCurrentUserAccountDetails,
 	updateCurrentUserAvatar,
 	updateCurrentUserPassword,
@@ -25,6 +26,7 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/renew-token").post(renewRefreshToken);
+router.route("/current-user").post(verifyJWT, getCurrentUser);
 router.route("/change-password").post(verifyJWT, updateCurrentUserPassword);
 router
 	.route("/update-account")
