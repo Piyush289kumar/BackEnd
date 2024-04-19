@@ -198,7 +198,7 @@ const renewRefreshToken = asyncHandler(async (req, res) => {
 
 const updateCurrentUserPassword = asyncHandler(async (req, res) => {
 	const { oldPassword, newPassword, confPassword } = req.body;
-	if (oldPassword && newPassword && confPassword) {
+	if (!oldPassword && !newPassword && !confPassword) {
 		throw new ApiError(400, "All fields are required");
 	}
 	if (newPassword !== confPassword) {
@@ -209,7 +209,7 @@ const updateCurrentUserPassword = asyncHandler(async (req, res) => {
 		if (!user) {
 			throw new ApiError(401, "Can't Get User Data");
 		}
-		const isPasswordValid = await user.isPasswordCorrect(newPassword);
+		const isPasswordValid = await user.isPasswordCorrect(oldPassword);
 		if (!isPasswordValid) {
 			throw new ApiError(400, "Invalid old Password");
 		}
